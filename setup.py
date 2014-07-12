@@ -17,4 +17,4 @@ setup(
     version='1.0.0',
     description='Controller for a twitter controlled robot',
     author='Joe Cathell',
-    author_email='kamikazie_joe@gmail.com')
+    author_email='kamikazejoe@gmail.com')
