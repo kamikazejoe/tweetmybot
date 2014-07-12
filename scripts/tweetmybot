@@ -1,0 +1,70 @@
+#!/usr/bin/env python
+
+import Queue
+from optparse import OptionParser
+import importlib
+import sys
+import time
+import signal
+
+from tweetmybot.input import CommandLine
+from tweetmybot.output import Console
+from tweetmybot.feedback import DummyFeedback
+from tweetmybot import CommandParser
+
+parser = OptionParser()
+parser.add_option("-i", "--input",
+                  dest="input",
+                  help="Where to read input from",
+                  default="CommandLine")
+parser.add_option("-o", "--output",
+                  dest="output",
+                  help="Where to write commands to",
+                  default="Console")
+parser.add_option("-f", "--feedback",
+                  dest="feedback",
+                  help="Where to send feedback",
+                  default="DummyFeedback")
+
+(options,args) = parser.parse_args()
+
+command_queue  = Queue.Queue()
+action_queue   = Queue.Queue()
+feedback_queue = Queue.Queue()
+
+if options.input == "CommandLine":
+    input = CommandLine.CommandLine(command_queue)
+else:
+    raise NotImplementedError("Unknown input class ",options.input)
+
+if options.output == "Console":
+    output = Console.Console(action_queue)
+else:
+    raise NotImplementedError("Unknown output class ",options.output)
+
+if options.feedback == "DummyFeedback":
+    feedback = DummyFeedback.DummyFeedback(feedback_queue)
+else:
+    raise NotImplementedError("Unknown feedback class ",options.feedback)
+
+parser = CommandParser.CommandParser(command_queue,action_queue,feedback_queue)
+
+running = True
+
+def signal_handler(signal, frame):
+    input.stop()
+    output.stop()
+    feedback.stop()
+    parser.stop()
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
+
+input.start()
+output.start()
+feedback.start()
+parser.start()
+
+while running:
+    time.sleep(1)
+
